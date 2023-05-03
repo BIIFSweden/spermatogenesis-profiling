@@ -5,7 +5,7 @@ TODO
 
 # Installation
 
-1. Download Anaconda from this link.
+1. Download Anaconda from this [link](https://www.anaconda.com/download)
 2. Download the Git repository for this project.
 3. Navigate to the downloaded git repository directory.
    ```bash
