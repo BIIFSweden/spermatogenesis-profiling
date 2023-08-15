@@ -24,17 +24,14 @@ This research has the potential to improve our understanding of the molecular me
 
 # Usage
 
-1. Navigate to the downloaded git repository directory.
+1. Navigate to the downloaded git repository directory, then run Jupyter Lab or Jupyter Notebook
    ```bash
    cd directoy_of_downloaded_git_repository/
-   ```
-2. Then run Jupyter Lab or Jupyter Notebook
-   ```bash
    jupyter notebook
    ``` 
    or
    ```bash
    jupyter-lab
-   ``` 
+   
 
 
