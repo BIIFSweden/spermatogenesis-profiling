@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # A spatial single-cell type map of adult human spermatogenesis
 
 # Overview
@@ -32,6 +34,13 @@ This research has the potential to improve our understanding of the molecular me
    or
    ```bash
    jupyter-lab
-   
+   ``` 
 
+# Support
+
+If you find a bug, please [raise an issue](https://github.com/BIIFSweden/CeciliaBergstrm2023-1/issues/new)
+
+# Authors
+
+[SciLifeLab BioImage Informatics Facility (BIIF)](https://biifsweden.github.io/) project lead: Gisele Miranda
 
