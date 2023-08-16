@@ -7,8 +7,9 @@ scikit-image==0.19.3
 scipy==1.9.3
 os-sys==2.1.4
 Python_IO==0.3
-stardist==0.8.5
+tensorflow==2.13.0
 csbdeep==0.7.4
+stardist==0.8.5
 Pillow==10.0.0
 pyotritonclient==0.2.6
 kaibu-utils==0.1.12
