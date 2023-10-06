@@ -51,14 +51,14 @@ def export_table_to_dataframe(tables, cols):
     
     return mean_intens
 
-def opal_quantification(ref_img, labels, bin_mask, cols, filter_area, filter_size):
+def opal_quantification(ref_img, labels, bin_mask, cols, filter_area, filter_size, preproc):
 
     images = [ref_img[(x),:,:] for x in range(ref_img.shape[0])] # for each channel
     thresh_images = []
     intens_masks = []
     tables = []
 
-    excl_cols = ['DAPI', 'Autofluorescence','OPAL520']
+    excl_cols = ['DAPI', 'Autofluorescence']
 
     i = 0
     for img in images:
@@ -68,10 +68,13 @@ def opal_quantification(ref_img, labels, bin_mask, cols, filter_area, filter_siz
             intensity_means = measure.regionprops_table(labels, img, properties=['label', 'intensity_mean'])
             tables.append(intensity_means)
         else:
-            print('processing...')
+            if preproc:
+                print('processing...')
+                # pre-processing
+                background, filtered = preprocess(img)
+            else:
+                filtered = img
 
-            # pre-processing
-            background, filtered = preprocess(img)
             filteredByCellMask = bin_mask * filtered # for each channel, exclude regions that are outside of the cellular region defined by the segmentation segmentation
             
             thresholds = threshold_multiotsu(filtered)
