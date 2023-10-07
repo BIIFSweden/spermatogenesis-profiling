@@ -69,7 +69,7 @@ def opal_quantification(ref_img, labels, bin_mask, cols, filter_area, filter_siz
             tables.append(intensity_means)
         else:
             if preproc:
-                print('processing...')
+                print('preprocessing...')
                 # pre-processing
                 background, filtered = preprocess(img)
             else:
