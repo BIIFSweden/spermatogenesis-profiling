@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import sklearn
+import os
 
 # pre-processing filters
 from skimage.restoration import rolling_ball
@@ -51,7 +52,7 @@ def export_table_to_dataframe(tables, cols):
     
     return mean_intens
 
-def opal_quantification(ref_img, labels, bin_mask, cols, filter_area, filter_size, preproc):
+def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_area, filter_size, preproc):
 
     images = [ref_img[(x),:,:] for x in range(ref_img.shape[0])] # for each channel
     thresh_images = []
@@ -67,20 +68,26 @@ def opal_quantification(ref_img, labels, bin_mask, cols, filter_area, filter_siz
         if cols[i] in excl_cols:
             intensity_means = measure.regionprops_table(labels, img, properties=['label', 'intensity_mean'])
             tables.append(intensity_means)
+
         else:
-            if preproc:
-                print('preprocessing...')
-                # pre-processing
-                background, filtered = preprocess(img)
-            else:
+            if cols[i] == 'OPAL520':
+                # load Ilastik mask
+                label520 = io.imread(ilastik_mask)
+                thresholded = (label520 == 1) * 1 
                 filtered = img
+            else:
+                if preproc:
+                    print('preprocessing...')
+                    # pre-processing
+                    background, filtered = preprocess(img)
+                else:
+                    filtered = img
+                    thresholds = threshold_multiotsu(filtered)
+                    thr = thresholds[1]
+                    thresholded = (img >= thr)
 
             filteredByCellMask = bin_mask * filtered # for each channel, exclude regions that are outside of the cellular region defined by the segmentation segmentation
             
-            thresholds = threshold_multiotsu(filtered)
-            thr = thresholds[1]
-            thresholded = (img >= thr)
-
             if filter_area:
                 thresholded = morphology.remove_small_objects(thresholded, min_size=filter_size, connectivity=2)
             thresholded = thresholded * 1
