@@ -52,7 +52,7 @@ def export_table_to_dataframe(tables, cols):
     
     return mean_intens
 
-def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_area, filter_size, preproc):
+def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_area, filter_size, preproc, multi_otsu):
 
     images = [ref_img[(x),:,:] for x in range(ref_img.shape[0])] # for each channel
     thresh_images = []
@@ -82,8 +82,11 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
                     background, filtered = preprocess(img)
                 else:
                     filtered = img
-                    thresholds = threshold_multiotsu(filtered)
-                    thr = thresholds[1]
+                    if multi_otsu:
+                        thresholds = threshold_multiotsu(filtered)
+                        thr = thresholds[1]
+                    else:
+                        thr = threshold_otsu(filtered)
                     thresholded = (img >= thr)
 
             filteredByCellMask = bin_mask * filtered # for each channel, exclude regions that are outside of the cellular region defined by the segmentation segmentation
