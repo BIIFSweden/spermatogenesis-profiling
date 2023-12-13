@@ -19,6 +19,95 @@ from skimage.morphology import disk
 from skimage import io, filters, measure, segmentation, color, util, exposure, morphology
 from skimage.filters import threshold_otsu, threshold_multiotsu
 
+from imjoy_rpc.hypha import connect_to_server
+import time
+
+async def runSegmentation(image, params):
+    server = await connect_to_server({
+        "name": "test client",
+        "server_url": "https://ai.imjoy.io/",
+        "method_timeout": 360}
+    )
+    triton = await server.get_service("triton-client")
+
+    # Try a small chunk with the same inputs
+    #image = inputs["args"][0]
+    #params = inputs["args"][1]
+    #for size in (300, 600, 900, 2000, 4000):
+    #    subim = image[:size, :size]
+    #    print(f"Running on image {subim.shape})...")
+    #    await try_run(subim, params, triton)
+
+    #print(f"Running on full image {image.shape}...")
+    return await try_run(image, params, triton)
+
+
+async def try_run(image, params, triton):
+    t_start = time.time()
+    try:
+        results = await triton.execute(
+                inputs=[image, params],
+                model_name='stardist',
+                decode_bytes=True)
+        #print("Seems ok?: ", ("mask" in results) and (results["mask"].ndim == 2))
+    except:
+        print("Failed 😢")
+    t_taken = time.time() - t_start
+    print("Time taken: ", t_taken, "s")
+
+    return results
+
+def stitchSegmentedTiles(merged_image, blockSize):
+
+    labeled_image = merged_image.transpose(1, 2, 0).astype('uint16')
+
+    delta = 3
+
+    h = labeled_image.shape[0]
+    w = labeled_image.shape[1]
+
+    i = blockSize - delta # initialize counter
+
+    labels_to_replace = []
+
+    # check labels along rows
+    while i < w:
+        rows = labeled_image[i:(i+delta*2),]
+        
+        for j in range(rows.shape[1]):
+            labels = rows[:,j,0]
+            labels = labels[labels > 0] # exclude background
+            
+            if(labels.size > 0):
+                if max(labels) != min(labels):
+                    labels_to_replace.append((min(labels), max(labels)))
+            
+        i = i + blockSize
+
+        
+    # check labels along columns
+    i = blockSize - delta # initialize counter
+    while i < h:
+        cols = labeled_image[:,i:(i+delta*2),:]
+        
+        for j in range(cols.shape[0]):
+            labels = cols[j,:,0]
+            labels = labels[labels > 0] # exclude background
+            
+            if(labels.size > 0):
+                if max(labels) != min(labels):
+                    labels_to_replace.append((min(labels), max(labels)))
+            
+        i = i + blockSize
+
+    labels_to_replace = list(set(labels_to_replace))
+
+    for k in range(len(labels_to_replace)):
+        labeled_image[labeled_image == labels_to_replace[k][0]] = labels_to_replace[k][1]
+        
+    #io.imsave(img_path + 'testDAPI_cropped_segmented_merged_labeled.tif',labeled_image.astype('uint16'))
+    return labeled_image
+
 def preprocess(img):
     background = rolling_ball(img, radius=50)
     filtered_backgd = img - background
