@@ -141,7 +141,7 @@ def export_table_to_dataframe(tables, cols):
     
     return mean_intens
 
-def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_area, filter_size, preproc, multi_otsu):
+def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_area, minSize, maxSize, preproc, multi_otsu_levels):
 
     images = [ref_img[(x),:,:] for x in range(ref_img.shape[0])] # for each channel
     thresh_images = []
@@ -171,17 +171,30 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
                     background, filtered = preprocess(img)
                 else:
                     filtered = img
-                    if multi_otsu:
-                        thresholds = threshold_multiotsu(filtered)
-                        thr = thresholds[1]
-                    else:
-                        thr = threshold_otsu(filtered)
+                    #if multi_otsu:
+                    #    thresholds = threshold_multiotsu(filtered)
+                    #    thr = thresholds[1]
+                    #else:
+                    #    thr = threshold_otsu(filtered)
+
+                    level = multi_otsu_levels[i]
+                    thresholds = threshold_multiotsu(filtered,classes=level)
+                    
+                    j = level - 2
+                    thr = thresholds[j]
                     thresholded = (img >= thr)
 
             filteredByCellMask = bin_mask * filtered # for each channel, exclude regions that are outside of the cellular region defined by the segmentation segmentation
             
             if filter_area:
-                thresholded = morphology.remove_small_objects(thresholded, min_size=filter_size, connectivity=2)
+                #thresholded = morphology.remove_small_objects(thresholded, min_size=filter_size, connectivity=2)
+                # filter by size - remove small objects
+                thresholded_small = morphology.remove_small_objects(thresholded, min_size=minSize[i], connectivity=2)
+                
+                # filter by size - remove big objects
+                thresholded_mid = morphology.remove_small_objects(thresholded_small, maxSize[i])
+                thresholded = thresholded_small ^ thresholded_mid
+
             thresholded = thresholded * 1
 
             final_mask = filteredByCellMask * thresholded
