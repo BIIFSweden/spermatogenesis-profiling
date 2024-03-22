@@ -7,55 +7,83 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import sklearn
-import os
 
 # pre-processing filters
 from skimage.restoration import rolling_ball
-from skimage.filters import median
-from skimage.morphology import disk
+from skimage.filters import median, threshold_otsu, threshold_multiotsu
+from skimage.morphology import remove_small_objects, disk
+from skimage.measure import regionprops_table
+from skimage.util import img_as_ubyte
 
-from skimage import io, filters, measure, segmentation, color, util, exposure, morphology
-from skimage.filters import threshold_otsu, threshold_multiotsu
+from stardist.models import StarDist2D, Config2D
+from csbdeep.utils import normalize
 
-from imjoy_rpc.hypha import connect_to_server
-import time
+from cellpose import core, utils, io, models, metrics
+from tiler import Tiler, Merger 
 
-async def runSegmentation(image, params):
-    server = await connect_to_server({
-        "name": "test client",
-        "server_url": "https://ai.imjoy.io/",
-        "method_timeout": 360}
-    )
-    triton = await server.get_service("triton-client")
+def segment_nuclei(img, split, method, param_stardist, param_cellpose):
+    if split:
+        image16 = img.astype('uint16')
+        full_image = np.reshape(image16, [1, img.shape[0], img.shape[1]]) # reshape to [#channels, width, height]
 
-    # Try a small chunk with the same inputs
-    #image = inputs["args"][0]
-    #params = inputs["args"][1]
-    #for size in (300, 600, 900, 2000, 4000):
-    #    subim = image[:size, :size]
-    #    print(f"Running on image {subim.shape})...")
-    #    await try_run(subim, params, triton)
+        blockSize = 1000
+        # Setup tiling parameters
+        tiler = Tiler(data_shape=full_image.shape,tile_shape=(1, blockSize, blockSize),overlap=0,channel_dimension=0)
+        merger = Merger(tiler)
 
-    #print(f"Running on full image {image.shape}...")
-    return await try_run(image, params, triton)
+        countLabels = 0
+
+        # Process the image tile-by-tile
+        for tile_id, tile in tiler(full_image):
+            print(f"segmenting tile {tile_id}...")
+            # run inference
+
+            tile_new = tile[0,:,:]
+
+            if method=="stardist":
+                labels = segment_with_stardist(normalize(tile_new),param_stardist)
+            else:
+                labels = segment_with_cellpose(tile_new,param_cellpose)
+
+            maxLabelTile = np.amax(labels) # get max label of the current mask
+            labels = np.where(labels > 0, labels+countLabels, labels) # sum countLabels to the current mask
+            countLabels = countLabels + maxLabelTile # sum current max label to countLabels
+
+            tile_res = np.reshape(labels, [1, labels.shape[0], labels.shape[1]])
+            merger.add(tile_id, tile_res)
+
+        # Merge the image
+        merged_image = merger.merge(unpad=True)
+        
+        labels = stitchSegmentedTiles(merged_image, blockSize)
+        labels = labels[:,:,0]
+    else:
+        print('segmenting...')
+        if method=="stardist":
+            labels = segment_with_stardist(normalize(img),param_stardist)
+        else:
+            labels = segment_with_cellpose(img,param_cellpose)
+
+        #labels = segment_with_stardist(normalize(filtered),nms_thresh, prob_thresh)
+    return labels
+
+def segment_with_stardist(image, param):
+    model = StarDist2D.from_pretrained('2D_versatile_fluo') # load pretrained model
+    labels, _ = model.predict_instances(normalize(image),nms_thresh=param[0], prob_thresh=param[1]) # get predictions for nuclei
+    return labels
+
+def segment_with_cellpose(image, param):
+    channels = [0,0]
+
+    print('running cellpose 2D slice flows => masks')
+    model = models.Cellpose(model_type='nuclei')
+    print("eval")
+    masks, flows, styles, diams = model.eval(image, channels=chan, diameter=param[0], flow_threshold=param[1], cellprob_threshold=param[2])
 
 
-async def try_run(image, params, triton):
-    t_start = time.time()
-    try:
-        results = await triton.execute(
-                inputs=[image, params],
-                model_name='stardist',
-                decode_bytes=True)
-        #print("Seems ok?: ", ("mask" in results) and (results["mask"].ndim == 2))
-    except:
-        print("Failed 😢")
-    t_taken = time.time() - t_start
-    print("Time taken: ", t_taken, "s")
-
-    return results
+    print("finish segmenting")
+    return masks
 
 def stitchSegmentedTiles(merged_image, blockSize):
 
@@ -109,11 +137,13 @@ def stitchSegmentedTiles(merged_image, blockSize):
     return labeled_image
 
 def preprocess(img):
-    background = rolling_ball(img, radius=50)
-    filtered_backgd = img - background
-    filtered_median = median(filtered_backgd, disk(3))
+    #background = rolling_ball(img, radius=80)
+    #filtered_backgd = img - background
+    #filtered_median = median(filtered_backgd, disk(3))
+    filtered_median = median(img, disk(3))
     
-    return filtered_backgd, filtered_median
+    #return filtered_backgd, filtered_median
+    return filtered_median
 
 def nonzero_intensity_mean(mask: np.ndarray, img: np.ndarray) -> float:
     data = img[mask]
@@ -127,7 +157,7 @@ def nonzero_intensity_mean(mask: np.ndarray, img: np.ndarray) -> float:
 def get_avg_intensity(ref_img, labels, cols, properties):
     images = [ref_img[(x),:,:] for x in range(ref_img.shape[0])]
 
-    tables = [measure.regionprops_table(labels, image, properties=properties) for image in images]
+    tables = [regionprops_table(labels, image, properties=properties) for image in images]
     mean_intens = export_table_to_dataframe(tables, cols)
     
     return mean_intens
@@ -155,14 +185,15 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
         print('channel: ' + cols[i])
 
         if cols[i] in excl_cols:
-            intensity_means = measure.regionprops_table(labels, img, properties=['label', 'intensity_mean'])
+            intensity_means = regionprops_table(labels, img, properties=['label', 'intensity_mean'])
             tables.append(intensity_means)
 
         else:
             if cols[i] == 'OPAL520':
                 # load Ilastik mask
                 label520 = io.imread(ilastik_mask)
-                thresholded = (label520 == 1) * 1 
+                thresholded = (label520 == 1) # * img 
+                io.imsave('/Users/giselemiranda/ToOneDrive/BIIF/projects/Feria_Cecilia/new/input3/labels520.tif',thresholded)
                 filtered = img
             else:
                 if preproc:
@@ -171,11 +202,6 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
                     background, filtered = preprocess(img)
                 else:
                     filtered = img
-                    #if multi_otsu:
-                    #    thresholds = threshold_multiotsu(filtered)
-                    #    thr = thresholds[1]
-                    #else:
-                    #    thr = threshold_otsu(filtered)
 
                     level = multi_otsu_levels[i]
                     thresholds = threshold_multiotsu(filtered,classes=level)
@@ -189,10 +215,10 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
             if filter_area:
                 #thresholded = morphology.remove_small_objects(thresholded, min_size=filter_size, connectivity=2)
                 # filter by size - remove small objects
-                thresholded_small = morphology.remove_small_objects(thresholded, min_size=minSize[i], connectivity=2)
+                thresholded_small = remove_small_objects(thresholded, min_size=minSize[i], connectivity=2)
                 
                 # filter by size - remove big objects
-                thresholded_mid = morphology.remove_small_objects(thresholded_small, maxSize[i])
+                thresholded_mid = remove_small_objects(thresholded_small, maxSize[i])
                 thresholded = thresholded_small ^ thresholded_mid
 
             thresholded = thresholded * 1
@@ -202,7 +228,7 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
             thresh_images.append(thresholded)
             intens_masks.append(final_mask)
 
-            nonzero_intensity_means = measure.regionprops_table(labels, final_mask, 
+            nonzero_intensity_means = regionprops_table(labels, final_mask, 
                 properties=['label'], extra_properties=[nonzero_intensity_mean])
             tables.append(nonzero_intensity_means)
         i = i + 1
@@ -212,7 +238,7 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
     return mean_intens, thresh_images, intens_masks
 
 def save_results_opal_quantification(cols, outpath, thresh_images, intens_masks):
-    thresh = [io.imsave(outpath + '_thresh_mask_' + cols[x] + '.tif',util.img_as_ubyte(thresh_images[x]*255))
+    thresh = [io.imsave(outpath + '_thresh_mask_' + cols[x] + '.tif',img_as_ubyte(thresh_images[x]*255))
         for x in range(len(thresh_images))] # for each channel
 
     intens = [io.imsave(outpath + '_combined_mask_' + cols[x] + '.tif',intens_masks[x])
