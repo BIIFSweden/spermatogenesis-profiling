@@ -1,8 +1,6 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
 # A spatial single-cell type map of adult human spermatogenesis
 
-# Overview
+## Overview
 
 Spermatogenesis involves the transformation of adult spermatogonial stem cells into fully developed sperm cells, which is governed by the testis niche/microenvironment. The cells must maintain a balance between renewing themselves and becoming differentiated, and then proceed through multiple stages of cellular processes that include mitosis, meiosis, and sperm development, which are accompanied by significant morphological changes in both the shape and size of the cell.
 
@@ -10,9 +8,11 @@ This project aims to create a detailed spatial expression map of proteins involv
 
 This research has the potential to improve our understanding of the molecular mechanisms that control spermatogenesis, which could lead to the development of new therapies for infertility and other related disorders.
 
+<a href="url"><img src="overview.png"></a>
+
 # Installation
 
-1. Download Anaconda from this [link](https://www.anaconda.com/download)
+1. Download [Anaconda](https://www.anaconda.com/download)
 2. Download the Git repository for this project.
 3. Navigate to the downloaded git repository directory.
    ```bash
@@ -36,11 +36,26 @@ This research has the potential to improve our understanding of the molecular me
    jupyter-lab
    ``` 
 
-# Support
+### Input data
 
-If you find a bug, please [raise an issue](https://github.com/BIIFSweden/CeciliaBergstrm2023-1/issues/new)
 
-# Authors
+### Input parameters
 
-[SciLifeLab BioImage Informatics Facility (BIIF)](https://biifsweden.github.io/) project lead: Gisele Miranda
 
+### Nuclei segmentation with StarDist
+
+
+### Output data
+
+
+## Contact
+
+[SciLifeLab BioImage Informatics Facility (BIIF)](https://www.scilifelab.se/units/bioimage-informatics/) 
+
+*Developed by* Gisele Miranda
+
+## Licence
+
+[MIT](LICENSE)
+
+## DOI
