@@ -8,7 +8,7 @@ This project aims to create a detailed spatial expression map of proteins involv
 
 This research has the potential to improve our understanding of the molecular mechanisms that control spermatogenesis, which could lead to the development of new therapies for infertility and other related disorders.
 
-<a href="url"><img src="overview.png" height="800" width="400" ></a>
+<a href="url"><img src="overview.jpg" height="800" width="400" ></a>
 
 # Installation
 
