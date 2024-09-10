@@ -38,8 +38,13 @@ This research has the potential to improve our understanding of the molecular me
 
 ### Input data
 
+The Transverse histological sections of human testis samples were imaged using 7-color fluorescent multiplex immunohistochemistry (mIHC) to quantify protein expression in spermatogenesis. The stained slides were scanned using the Akoya PhenoImager and multi-page .tiff files are used for the image analysis, where each tiff-page represents a fluorescent channel by this order: 1, DAPI; 2, OPAL480; 3, OPAL520; 4, OPAL570; 5, OPAL620; 6, OPAL690; 7, OPAL780.
+
 
 ### Input parameters
+
+A set of parameters can be updated before running the Jupyter notebooks *pipeline_multiplexed* and *pipeline_multiplexed_batch*, such as, the nuclei growth factor, the parameters of the *StarDist* method, min and max area sizes (to be used to filter particles after segmentation), 
+A set of parameters can be updated before running the script
 
 
 ### Nuclei segmentation with StarDist
