@@ -15,11 +15,11 @@ from skimage.filters import median, threshold_otsu, threshold_multiotsu
 from skimage.morphology import remove_small_objects, disk
 from skimage.measure import regionprops_table
 from skimage.util import img_as_ubyte
+from skimage.io import imread, imsave
 
 from stardist.models import StarDist2D, Config2D
 from csbdeep.utils import normalize
 
-from cellpose import core, utils, io, models, metrics
 from tiler import Tiler, Merger 
 
 def segment_nuclei(img, split, method, param_stardist, param_cellpose):
@@ -41,10 +41,7 @@ def segment_nuclei(img, split, method, param_stardist, param_cellpose):
 
             tile_new = tile[0,:,:]
 
-            if method=="stardist":
-                labels = segment_with_stardist(normalize(tile_new),param_stardist)
-            else:
-                labels = segment_with_cellpose(tile_new,param_cellpose)
+            labels = segment_with_stardist(normalize(tile_new),param_stardist)
 
             maxLabelTile = np.amax(labels) # get max label of the current mask
             labels = np.where(labels > 0, labels+countLabels, labels) # sum countLabels to the current mask
@@ -60,30 +57,14 @@ def segment_nuclei(img, split, method, param_stardist, param_cellpose):
         labels = labels[:,:,0]
     else:
         print('segmenting...')
-        if method=="stardist":
-            labels = segment_with_stardist(normalize(img),param_stardist)
-        else:
-            labels = segment_with_cellpose(img,param_cellpose)
+        labels = segment_with_stardist(normalize(img),param_stardist)
 
-        #labels = segment_with_stardist(normalize(filtered),nms_thresh, prob_thresh)
     return labels
 
 def segment_with_stardist(image, param):
     model = StarDist2D.from_pretrained('2D_versatile_fluo') # load pretrained model
-    labels, _ = model.predict_instances(normalize(image),nms_thresh=param[0], prob_thresh=param[1]) # get predictions for nuclei
+    labels, _ = model.predict_instances(normalize(image),nms_thresh=0.8, prob_thresh=0.7) # get predictions for nuclei
     return labels
-
-def segment_with_cellpose(image, param):
-    channels = [0,0]
-
-    print('running cellpose 2D slice flows => masks')
-    model = models.Cellpose(model_type='nuclei')
-    print("eval")
-    masks, flows, styles, diams = model.eval(image, channels=chan, diameter=param[0], flow_threshold=param[1], cellprob_threshold=param[2])
-
-
-    print("finish segmenting")
-    return masks
 
 def stitchSegmentedTiles(merged_image, blockSize):
 
@@ -133,16 +114,11 @@ def stitchSegmentedTiles(merged_image, blockSize):
     for k in range(len(labels_to_replace)):
         labeled_image[labeled_image == labels_to_replace[k][0]] = labels_to_replace[k][1]
         
-    #io.imsave(img_path + 'testDAPI_cropped_segmented_merged_labeled.tif',labeled_image.astype('uint16'))
     return labeled_image
 
 def preprocess(img):
-    #background = rolling_ball(img, radius=80)
-    #filtered_backgd = img - background
-    #filtered_median = median(filtered_backgd, disk(3))
     filtered_median = median(img, disk(3))
     
-    #return filtered_backgd, filtered_median
     return filtered_median
 
 def nonzero_intensity_mean(mask: np.ndarray, img: np.ndarray) -> float:
@@ -191,9 +167,8 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
         else:
             if cols[i] == 'OPAL520':
                 # load Ilastik mask
-                label520 = io.imread(ilastik_mask)
+                label520 = imread(ilastik_mask)
                 thresholded = (label520 == 1) # * img 
-                io.imsave('/Users/giselemiranda/ToOneDrive/BIIF/projects/Feria_Cecilia/new/input3/labels520.tif',thresholded)
                 filtered = img
             else:
                 if preproc:
@@ -238,10 +213,10 @@ def opal_quantification(ref_img, labels, bin_mask, ilastik_mask, cols, filter_ar
     return mean_intens, thresh_images, intens_masks
 
 def save_results_opal_quantification(cols, outpath, thresh_images, intens_masks):
-    thresh = [io.imsave(outpath + '_thresh_mask_' + cols[x] + '.tif',img_as_ubyte(thresh_images[x]*255))
+    thresh = [imsave(outpath + '_thresh_mask_' + cols[x] + '.tif',img_as_ubyte(thresh_images[x]*255))
         for x in range(len(thresh_images))] # for each channel
 
-    intens = [io.imsave(outpath + '_combined_mask_' + cols[x] + '.tif',intens_masks[x])
+    intens = [imsave(outpath + '_combined_mask_' + cols[x] + '.tif',intens_masks[x])
         for x in range(len(intens_masks))] # for each channel
 
 def filter_columns(cols, df):
