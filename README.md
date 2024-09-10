@@ -10,7 +10,7 @@ This research has the potential to improve our understanding of the molecular me
 
 <a href="url"><img src="overview.jpg"></a>
 
-# Installation
+## Installation
 
 Install the [conda](https://conda.io) package, dependency and environment manager.
 
@@ -21,7 +21,7 @@ Then create the `multiplex-analysis` conda environment:
 
 This will install all necessary project dependencies.
 
-# Usage
+## Usage
 
 Copy all project data to the [data](data) directory.
 
@@ -44,6 +44,9 @@ A set of parameters can be updated before running the Jupyter notebooks *pipelin
 
 ## Output data
 
+## Support
+
+If you find a bug, please [raise an issue](https://github.com/BIIFSweden/CeciliaBergstrm2023-1/issues/new).
 
 ## Contact
 
