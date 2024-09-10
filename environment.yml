@@ -1,0 +1,20 @@
+name: multiplex-analysis
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pip
+  - python
+  - jupyterlab
+  - pip:
+    - imagecodecs
+    - matplotlib
+    - numpy
+    - pandas
+    - scikit-learn
+    - scikit-image
+    - scipy
+    - tensorflow
+    - csbdeep
+    - stardist
+    - tiler
