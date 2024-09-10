@@ -40,7 +40,7 @@ The Transverse histological sections of human testis samples were imaged using 7
 
 ## Input parameters
 
-A set of parameters can be updated before running the Jupyter notebooks *pipeline_multiplexed* and *pipeline_multiplexed_batch*, such as, the nuclei growth factor, the parameters of the *StarDist* method, min and max area sizes (to be used to filter particles after segmentation). A detailed description of these parameters can be found in the notebooks
+A set of parameters can be updated before running the Jupyter notebooks *pipeline_multiplexed* and *pipeline_multiplexed_batch*, such as, the nuclei growth factor and the parameters of the *StarDist* method. A detailed description of these parameters can be found in the notebooks
 
 ## Output data
 
