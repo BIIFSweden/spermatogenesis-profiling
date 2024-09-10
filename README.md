@@ -12,45 +12,37 @@ This research has the potential to improve our understanding of the molecular me
 
 # Installation
 
-1. Download [Anaconda](https://www.anaconda.com/download)
-2. Download the Git repository for this project.
-3. Navigate to the downloaded git repository directory.
-   ```bash
-   cd directoy_of_downloaded_git_repository/
-   ```
-4. Download the necessary packages using the command below:
-   ```bash
-   pip install -r requirements.txt
-   ``` 
-6. Finished
+Install the [conda](https://conda.io) package, dependency and environment manager.
+
+Then create the `multiplex-analysis` conda environment:
+
+    cd <path to your git repository directory>
+    conda env create -f environment.yml
+
+This will install all necessary project dependencies.
 
 # Usage
 
-1. Navigate to the downloaded git repository directory, then run Jupyter Lab or Jupyter Notebook
-   ```bash
-   cd directoy_of_downloaded_git_repository/
-   jupyter notebook
-   ``` 
-   or
-   ```bash
-   jupyter-lab
-   ``` 
+Copy all project data to the [data](data) directory.
 
-### Input data
+Then run [Jupyter Lab](https://jupyter.org) from within the `multiplex-analysis` conda environment:
+
+    cd <path to your git repository directory>
+    conda activate multiplex-analysis
+    jupyter-lab
+
+All analysis notebooks can be found in the [notebooks](notebooks) directory.
+
+## Input data
 
 The Transverse histological sections of human testis samples were imaged using 7-color fluorescent multiplex immunohistochemistry (mIHC) to quantify protein expression in spermatogenesis. The stained slides were scanned using the Akoya PhenoImager and multi-page .tiff files are used for the image analysis, where each tiff-page represents a fluorescent channel by this order: 1, DAPI; 2, OPAL480; 3, OPAL520; 4, OPAL570; 5, OPAL620; 6, OPAL690; 7, OPAL780.
 
 
-### Input parameters
+## Input parameters
 
-A set of parameters can be updated before running the Jupyter notebooks *pipeline_multiplexed* and *pipeline_multiplexed_batch*, such as, the nuclei growth factor, the parameters of the *StarDist* method, min and max area sizes (to be used to filter particles after segmentation), 
-A set of parameters can be updated before running the script
+A set of parameters can be updated before running the Jupyter notebooks *pipeline_multiplexed* and *pipeline_multiplexed_batch*, such as, the nuclei growth factor, the parameters of the *StarDist* method, min and max area sizes (to be used to filter particles after segmentation). A detailed description of these parameters can be found in the notebooks
 
-
-### Nuclei segmentation with StarDist
-
-
-### Output data
+## Output data
 
 
 ## Contact
