@@ -59,3 +59,4 @@ If you find a bug, please [raise an issue](https://github.com/BIIFSweden/Cecilia
 [MIT](LICENSE)
 
 ## DOI
+[![DOI](https://zenodo.org/badge/389618820.svg)](https://zenodo.org/doi/10.5281/zenodo.13788793)
